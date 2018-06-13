@@ -1,18 +1,28 @@
-const user = require('../controllers/note.controller');
+const user = require('../controllers/user.controller');
+const verifyToken = require('../auth/AuthController');
 
 module.exports = (app) => {
   // Create a new Note
-  app.post('/users', user.create);
+  app.post('/users', verifyToken, user.create);
 
   // Retrieve all Notes
-  app.get('/users', user.findAll);
+  app.get('/users', verifyToken, user.findAll);
+
+  // Retrieve user itself
+  app.get('/users/me', user.me);
+
+  // Login user
+  app.post('/login', user.login);
+
+  // Logout user
+  app.post('/logout', verifyToken, user.logout);
 
   // Retrieve a single Note with noteId
-  app.get('/users/:userId', user.findOne);
+  app.get('/users/:userId', verifyToken, user.findOne);
 
   // Update a Note with noteId
-  app.put('/users/:userId', user.update);
+  app.put('/users/:userId', verifyToken, user.update);
 
   // Delete a Note with noteId
-  app.delete('/users/:userId', user.delete);
+  app.delete('/users/:userId', verifyToken, user.delete);
 };
