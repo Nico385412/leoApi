@@ -6,15 +6,21 @@ const mongoose = require('mongoose');
 // Create express app
 const app = express();
 
+// Create express router
+const router = express.Router();
+
+// prefix all Routes
+app.use('/api', router);
+
 // parse requests of content-type - application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+router.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 // parse requests of content-type - application/json
-app.use(bodyParser.json({ limit: '50mb' }));
+router.use(bodyParser.json({ limit: '50mb' }));
 
 // let's declare a public static folder,
 // this is where our client side static files/output go
-app.use('/', express.static(`${__dirname}/tmp`));
+router.use('/', express.static(`${__dirname}/tmp`));
 
 
 // Configuring the database
@@ -33,15 +39,15 @@ mongoose.connect(dbConfig.url)
   });
 
 // define a simple route
-app.get('/', (req, res) => {
+router.get('/', (req, res) => {
   res.json({
     message: 'Welcome to EasyNotes application. Take notes quickly. Organize and keep track of all your notes.',
   });
 });
 
 // Require routes
-require('./app/routes/book.routes.js')(app);
-require('./app/routes/user.routes.js')(app);
+require('./app/routes/book.routes.js')(router);
+require('./app/routes/user.routes.js')(router);
 
 process.env.ROOTDIRECTORY = __dirname;
 
