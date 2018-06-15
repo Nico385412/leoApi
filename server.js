@@ -1,6 +1,6 @@
+const dbConfig = require((process.env.DOCKER)? './config/database.config.prod.js':'./config/database.config.js'); // eslint-disable-line
 const express = require('express');
 const bodyParser = require('body-parser');
-const dbConfig = require('./config/database.config.js');
 const mongoose = require('mongoose');
 
 // Create express app
