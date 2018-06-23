@@ -21,6 +21,12 @@ module.exports = (app) => {
   // Update a Note with noteId
   app.put('/books/:bookId', verifyToken, books.update);
 
+  // Update a Note with noteId
+  app.post('/books/:bookId/generate', verifyToken, books.generateId);
+
+  // Update a Note with noteId
+  app.get('/books/:cryptedId/decrypt', books.getFileFromTempLink);
+
   // Delete a Note with noteId
   app.delete('/books/:bookId', verifyToken, books.delete);
 };

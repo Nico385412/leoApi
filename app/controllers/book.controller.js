@@ -1,8 +1,11 @@
 const Book = require('../models/book.model.js');
 const BookFile = require('../models/book.file.model.js');
 const ImageFile = require('../models/image.file.model.js');
+const TempLink = require('../models/book.file.templink.model');
+const guid = require('../tools/index');
 const EPub = require('epub');
 const fs = require('fs');
+
 
 // Create Ebook from metadata
 
@@ -176,7 +179,7 @@ exports.findOnefile = (req, res) => {
           res.setHeader('Content-Disposition', `attachment; filename=${book.title} ${book.creator || book.author}.epub`);
           res.setHeader('Content-Transfer-Encoding', 'binary');
           res.setHeader('Content-Type', 'application/octet-stream');
-          return res.send(book.book.data);
+          return res.send(bookFile.book.data);
         })
         .catch((err) => {
           if (err.kind === 'ObjectId') {
@@ -215,3 +218,111 @@ exports.delete = (req, res) => {
     .catch(err => res.status(500).send(err));
 };
 
+exports.generateId = (req, res) => {
+
+  const cryptedId = guid.guid();
+
+
+  const { bookId } = req.params;
+
+  const { dateMaxtoDowload, permanent } = req.body;
+
+  if (!bookId || bookId.length === 0) {
+    return res.status(500).send('error bookid not valid');
+  }
+
+  let timeleft;
+
+  console.log(dateMaxtoDowload);
+
+  if (!dateMaxtoDowload && !permanent) {
+    console.log('no dateMaxProvided');
+    timeleft = new Date();
+    timeleft.setDate(timeleft.getDate() + 7);
+  } else if (dateMaxtoDowload && !permanent) {
+    console.log('dateMaxProvided');
+    timeleft = new Date(dateMaxtoDowload);
+  }
+
+  const permanentParsed = (permanent === undefined) ? false : permanent;
+
+  const templink = new TempLink({
+    bookId,
+    cryptedId,
+    dateMaxtoDowload: timeleft,
+    permanent: permanentParsed,
+  });
+
+  templink.save()
+    .then(val => res.status(200).send(val))
+    .catch(err => res.status(500).send(err));
+};
+
+exports.getFileFromTempLink = (req, res) => {
+  const { cryptedId } = req.params;
+
+  if (!cryptedId || cryptedId.length === 0) {
+    return res.status(500).send('error cryptedId not valid');
+  }
+
+  TempLink.findOne({ cryptedId })
+    .then((val) => {
+      const { bookId, dateMaxtoDowload, permanent } = val;
+
+      const timeleft = new Date(dateMaxtoDowload).getTime();
+
+      const toDay = new Date().getTime();
+
+      if (toDay > timeleft && !permanent) {
+        return res.status(500).send({
+          message: 'Link expired, ask for a new link',
+        });
+      }
+
+      if (!val) {
+        return res.send(403).send('the temporary');
+      }
+      Book.findById(bookId)
+        .then((book) => {
+          if (!book) {
+            return res.status(404).send({
+              message: `Book not found with id ${bookId}`,
+            });
+          }
+          BookFile.findById(book.book)
+            .then((bookFile) => {
+              if (!bookFile) {
+                return res.status(404).send({
+                  message: `Book not found with id ${bookId}`,
+                });
+              }
+
+              res.setHeader('Content-Disposition', `attachment; filename=${book.title} ${book.creator || book.author}.epub`);
+              res.setHeader('Content-Transfer-Encoding', 'binary');
+              res.setHeader('Content-Type', 'application/octet-stream');
+              return res.send(bookFile.book.data);
+            })
+            .catch((err) => {
+              if (err.kind === 'ObjectId') {
+                return res.status(404).send({
+                  message: `BookFile not found with id ${req.params.bookId}`,
+                });
+              }
+              return res.status(500).send({
+                message: `Error retrieving book with id  ${req.params.bookId}`,
+              });
+            });
+        })
+        .catch((err) => {
+          if (err.kind === 'ObjectId') {
+            return res.status(404).send({
+              message: `Book not found with id ${req.params.bookId}`,
+            });
+          }
+          return res.status(500).send({
+            message: `Error retrieving book with id  ${req.params.bookId}`,
+          });
+        });
+    })
+    .catch(err => res.status(500).send(err));
+};
