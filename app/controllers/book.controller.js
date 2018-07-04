@@ -280,7 +280,7 @@ exports.getFileFromTempLink = (req, res) => {
       }
 
       if (!val) {
-        return res.send(403).send('the temporary');
+        return res.send(403).send('the temporary link doesn\'t exist anymore');
       }
       Book.findById(bookId)
         .then((book) => {
@@ -325,4 +325,23 @@ exports.getFileFromTempLink = (req, res) => {
         });
     })
     .catch(err => res.status(500).send(err));
+};
+
+exports.isValid = (bookId) => {
+  Book.findById(bookId)
+    .then((val) => {
+      console.log(val.id);
+      if (val.id !== null && val.id !== undefined) {
+        console.log('returning true');
+
+        return true;
+      } else {
+        console.log('returning false');
+        return false;
+      }
+    })
+    .catch(() => {
+      console.log('returning catch false');
+      return false;
+    });
 };

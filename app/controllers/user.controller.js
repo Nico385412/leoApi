@@ -1,4 +1,6 @@
 const User = require('../models/user.model');
+const Book = require('../models/book.model');
+const BookControler = require('../controllers/book.controller');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const config = require('../../.env.js');
@@ -39,7 +41,7 @@ exports.findAll = (req, res) => {
 // GETS A SINGLE USER FROM THE DATABASE
 
 exports.findOne = (req, res) => {
-  User.findById(req.params.id, { password: 0 })
+  User.findById(req.params.userId, { password: 0 })
     .then(val => res.status(200).send(val))
     .catch(err => res.status(500).send(err));
 };
@@ -100,4 +102,64 @@ exports.login = (req, res) => {
 // LOGOUT
 exports.logout = (req, res) => {
   res.status(200).send({ auth: false, token: null });
+};
+
+// Like a book
+exports.likeABook = (req, res) => {
+  User.findById(req.params.userId)
+    .then((user) => {
+
+      Book.findById(req.params.bookId)
+        .then((book) => {
+          if (book) {
+            console.log(user.bookLiked.indexOf(book.id));
+            if (user.bookLiked.indexOf(book.id) < 0) {
+              user.bookLiked.push(book);
+              user.save()
+                .then(() => res.status(200).send('book liked'))
+                .catch((err) => {
+                  res.status(500).send(err);
+                });
+            } else {
+              return res.status(403).send('Book already liked');
+            }
+          }
+        })
+        .catch((err) => {
+          res.status(500).send(err);
+        });
+    })
+    .catch((err) => {
+      res.status(500).send(err);
+    });
+};
+
+// DisLike a book
+exports.disLikeABook = (req, res) => {
+  User.findById(req.params.userId)
+    .then((user) => {
+
+      Book.findById(req.params.bookId)
+        .then((book) => {
+          if (book) {
+            console.log(user.bookLiked.indexOf(book.id));
+            if (user.bookLiked.indexOf(book.id) >= 0) {
+              user.bookLiked.splice(user.bookLiked.indexOf(book.id));
+              user.save()
+                .then(() => res.status(200).send('book delete'))
+                .catch((err) => {
+                  res.status(500).send(err);
+                });
+            } else {
+              return res.status(403).send('Book is not actualy liked');
+            }
+          }
+        })
+        .catch((err) => {
+          res.status(500).send(err);
+        });
+    })
+    .catch((err) => {
+      res.status(500).send(err);
+    });
 };

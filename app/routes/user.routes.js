@@ -25,4 +25,10 @@ module.exports = (app) => {
 
   // Delete a Note with noteId
   app.delete('/users/:userId', verifyToken, user.delete);
+
+  // Like a book
+  app.put('/users/:userId/like/:bookId', verifyToken, user.likeABook);
+
+  // DisLike a book
+  app.put('/users/:userId/dislike/:bookId', verifyToken, user.disLikeABook);
 };
